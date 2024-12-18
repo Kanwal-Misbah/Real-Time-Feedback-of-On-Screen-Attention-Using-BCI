@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus & Reading</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffffff;
+            transition: background-color 0.5s ease, color 0.5s ease;
+            text-align: center;
+        }
+
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            height: 80%;
+            padding: 10px;
+        }
+
+        .content {
+            width: 60%;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: justify;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar {
+            width: 30%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .emoji {
+            font-size: 3rem;
+            margin: 20px;
+        }
+
+        .info {
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .score-box {
+            width: 250px;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .attention-box {
+            background: linear-gradient(45deg, #ff7e5f, #feb47b); /* Gradient from red to orange */
+            width: 250px;
+        }
+
+        .meditation-box {
+            background: linear-gradient(45deg, #6a11cb, #2575fc); /* Gradient from purple to blue */
+            width: 250px;
+        }
+
+        .reading-content h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .reading-content p {
+            margin-top: 20px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .feedback-message {
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 20px;
+            color: #333;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        /* For the content section */
+        .reading-content h2 {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .reading-content p {
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        /* Smaller screens */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .content, .sidebar {
+                width: 90%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Sidebar displaying attention levels, feedback, and emojis -->
+        <div class="sidebar">
+            <div class="score-box attention-box">
+                <h3>Attention</h3>
+                <span id="attention-level">0</span>
+            </div>
+
+            <div class="score-box meditation-box">
+                <h3>Meditation</h3>
+                <span id="meditation-level">50</span>
+            </div>
+
+            <div id="feedback-message" class="feedback-message"></div>
+            <div id="emoji" class="emoji"></div>
+        </div>
+
+        <!-- Content displaying the reading material -->
+        <div class="content">
+    <div class="reading-content">
+        <h2><center>Focus on the Following Content<center/></h2>
+        <p id="reading-text">
+            <b>Welcome to Focus Reader:</b><br/>
+            This webpage is designed to help you improve your focus while reading. By measuring your attention and meditation levels, we provide real-time feedback that encourages you to stay engaged and focused.
+            <br/><br/>
+
+            <b>How it Works:</b>
+            <ul>
+                <li>Attention: Enhances reading speed and retention</li>
+                <li>Meditation: Helps you stay calm and navigate distractions</li>
+                
+            </ul>
+            Stay engaged with your reading, and let us help you improve your concentration. The more you focus, the better your experience gets!<br/><br/>
+
+            <b>Let's boost your focus and enhance your reading experience. Keep going, you're doing great!<b/> 💪
+        </p>
+    </div>
+</div>
+
+    </div>
+
+    <script>
+        const socket = io(); // Connect to the socket server
+        
+        // DOM Elements
+        const attentionLevelElement = document.getElementById('attention-level');
+        const meditationLevelElement = document.getElementById('meditation-level');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const emojiElement = document.getElementById('emoji');
+        const body = document.body;
+        
+        // Function to update the background and UI elements based on attention level
+        function updateUIBasedOnAttention(attention, meditation) {
+            attentionLevelElement.innerText = attention;
+            meditationLevelElement.innerText = meditation;
+
+            // Set background color based on attention level
+            if (attention === 0) {
+                body.style.backgroundColor = "white";
+                feedbackMessage.innerText = "Let's get started! Stay focused!";
+                emojiElement.innerHTML = "😴";
+            } else if (attention <= 50) {
+                body.style.backgroundColor = "lightcoral"; // Light Red
+                feedbackMessage.innerText = "You're distracted. Try focusing!";
+                emojiElement.innerHTML = "🤔";
+            } else if (attention <= 75) {
+                body.style.backgroundColor = "lightblue"; // Light Blue
+                feedbackMessage.innerText = "You're doing well! Keep it up!";
+                emojiElement.innerHTML = "😎";
+            } else {
+                body.style.backgroundColor = "lightgreen"; // Green
+                feedbackMessage.innerText = "Amazing focus! Keep going!";
+                emojiElement.innerHTML = "💪";
+            }
+        }
+
+        // Listen to NeuroSky data (via Socket.IO)
+        socket.on('neuro_data', (data) => {
+            const attention = data.attention;
+            const meditation = data.meditation;
+
+            // Update UI based on the received data
+            updateUIBasedOnAttention(attention, meditation);
+        });
+
+    </script>
+</body>
+</html>
